@@ -12,9 +12,8 @@ APP_VERSION ?= $(VERSION)
 LDFLAGS     = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)
 
 # Auto-detect signing identity and team ID from the keychain.
-# Prefers "Developer ID Application"; falls back to "Apple Development".
 SIGN_IDENTITY ?= $(shell security find-identity -v -p codesigning | \
-	awk -F'"' '/Developer ID Application/ {found=$$2} !found && /Apple Development/ {found=$$2} END {print found}' 2>/dev/null)
+	awk -F'"' '/Developer ID Application/ {print $$2; exit}' 2>/dev/null)
 
 TEAM_ID ?= $(shell echo "$(SIGN_IDENTITY)" | sed -n 's/.*(\([A-Z0-9]*\))$$/\1/p')
 
