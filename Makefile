@@ -20,7 +20,9 @@ TEAM_ID ?= $(shell echo "$(SIGN_IDENTITY)" | sed -n 's/.*(\([A-Z0-9]*\))$$/\1/p'
 # Path to the provisioning profile (download from developer.apple.com).
 PROVISIONING_PROFILE ?= chipkey.provisionprofile
 
-.PHONY: build build-darwin build-linux build-windows bundle sign tools lint check-tidy test clean
+NOTARIZE_ZIP = $(BIN_DIR)/Chipkey_$(APP_VERSION)_macos_app.zip
+
+.PHONY: build build-darwin build-linux build-windows bundle notarize tools lint check-tidy test clean
 
 build: build-darwin
 
@@ -79,6 +81,30 @@ bundle: $(BIN_DIR)/$(BINARY)-darwin
 	@echo "Bundle created: $(APP_BUNDLE)"
 	@echo "Run with: $(APP_MACOS)/$(BINARY) <command>"
 	@echo "Verify:   codesign -dv $(APP_BUNDLE)"
+
+## Notarize and staple the .app bundle. Requires APPLE_ID and APPLE_APP_SPECIFIC_PASSWORD env vars.
+notarize: $(APP_BUNDLE)
+	@if [ -z "$(APPLE_ID)" ]; then \
+		echo "Error: APPLE_ID is not set." >&2; exit 1; \
+	fi
+	@if [ -z "$(APPLE_APP_SPECIFIC_PASSWORD)" ]; then \
+		echo "Error: APPLE_APP_SPECIFIC_PASSWORD is not set." >&2; exit 1; \
+	fi
+	@if [ -z "$(TEAM_ID)" ]; then \
+		echo "Error: could not determine Team ID." >&2; exit 1; \
+	fi
+	@echo "Notarizing $(APP_BUNDLE) (Team $(TEAM_ID))..."
+	zip -r "$(NOTARIZE_ZIP)" "$(APP_BUNDLE)"
+	xcrun notarytool submit "$(NOTARIZE_ZIP)" \
+		--apple-id "$(APPLE_ID)" \
+		--password "$(APPLE_APP_SPECIFIC_PASSWORD)" \
+		--team-id "$(TEAM_ID)" \
+		--wait
+	xcrun stapler staple "$(APP_BUNDLE)"
+	rm "$(NOTARIZE_ZIP)"
+	zip -r "$(NOTARIZE_ZIP)" "$(APP_BUNDLE)"
+	@echo ""
+	@echo "Notarized bundle zipped at: $(NOTARIZE_ZIP)"
 
 ## Install development tools into .tools/.
 tools:
