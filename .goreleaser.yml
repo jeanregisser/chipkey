@@ -24,11 +24,11 @@ universal_binaries:
     replace: true
 
 archives:
-  - builds: [default]
+  - ids: [default]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 checksum:
   name_template: checksums.txt
