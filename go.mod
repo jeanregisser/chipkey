@@ -7,7 +7,7 @@ require github.com/facebookincubator/sks v0.0.0-20260127210424-abaa9753280c
 require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
-	github.com/go-ole/go-ole v1.2.5 // indirect
+	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/certificate-transparency-go v1.1.2 // indirect
 	github.com/google/certtostore v1.0.3-0.20230404221207-8d01647071cc // indirect
