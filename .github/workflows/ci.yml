@@ -123,6 +123,25 @@ jobs:
 
           echo -n "$APPLE_CERTIFICATE_P12_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
 
+          # Check certificate expiry before importing
+          EXPIRY=$(openssl pkcs12 -in "$CERTIFICATE_PATH" -passin "pass:$APPLE_CERTIFICATE_PASSWORD" \
+            -nokeys -clcerts 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+          if [ -n "$EXPIRY" ]; then
+            EXPIRY_EPOCH=$(date -j -f "%b %d %T %Y %Z" "$EXPIRY" +%s 2>/dev/null || date -d "$EXPIRY" +%s 2>/dev/null)
+            NOW_EPOCH=$(date +%s)
+            DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+            echo "Certificate expires: $EXPIRY ($DAYS_LEFT days remaining)"
+            if [ "$DAYS_LEFT" -lt 0 ]; then
+              echo "::error::Apple Developer ID certificate has EXPIRED."
+              echo "::error::Re-export from Keychain Access, base64-encode, and update the APPLE_CERTIFICATE_P12_BASE64 secret."
+              echo "::error::If the certificate itself expired, create a new one at https://developer.apple.com/account/resources/certificates"
+              exit 1
+            elif [ "$DAYS_LEFT" -lt 30 ]; then
+              echo "::warning::Apple Developer ID certificate expires in $DAYS_LEFT days ($EXPIRY)."
+              echo "::warning::Prepare a replacement: export from Keychain Access and update the APPLE_CERTIFICATE_P12_BASE64 secret."
+            fi
+          fi
+
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
