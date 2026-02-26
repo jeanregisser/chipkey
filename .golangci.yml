@@ -1,0 +1,13 @@
+linters:
+  enable:
+    - errorlint
+    - gofumpt
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unused
+
+formatters:
+  enable:
+    - gofumpt

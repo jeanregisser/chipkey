@@ -11,13 +11,20 @@ import (
 	"math/big"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 )
 
 // testBinary is the path to the compiled binary used by CLI integration tests.
-const testBinary = "./chipkey-test"
+var testBinary = "./chipkey-test"
+
+func init() {
+	if runtime.GOOS == "windows" {
+		testBinary += ".exe"
+	}
+}
 
 // TestMain builds the binary once before running CLI integration tests.
 func TestMain(m *testing.M) {
@@ -58,9 +65,9 @@ func errorCode(result map[string]any) string {
 
 func TestSplitKeyID_Valid(t *testing.T) {
 	cases := []struct {
-		input         string
-		wantLabel     string
-		wantTag       string
+		input     string
+		wantLabel string
+		wantTag   string
 	}{
 		{"chipkey:abc-uuid", "chipkey", "abc-uuid"},
 		{"agent-wallet:550e8400-e29b-41d4-a716-446655440000", "agent-wallet", "550e8400-e29b-41d4-a716-446655440000"},
@@ -84,11 +91,11 @@ func TestSplitKeyID_Valid(t *testing.T) {
 
 func TestSplitKeyID_Invalid(t *testing.T) {
 	cases := []string{
-		"",         // empty
-		"nocolon",  // no separator
-		"label:",   // empty tag
-		":tag",     // empty label
-		":",        // both empty
+		"",        // empty
+		"nocolon", // no separator
+		"label:",  // empty tag
+		":tag",    // empty label
+		":",       // both empty
 	}
 	for _, input := range cases {
 		_, _, err := splitKeyID(input)
@@ -194,22 +201,22 @@ func TestDerToRawRS_Invalid(t *testing.T) {
 
 func TestCLI_ArgumentErrors(t *testing.T) {
 	cases := []struct {
-		name      string
-		args      []string
-		wantCode  string
+		name     string
+		args     []string
+		wantCode string
 	}{
-		{"no args",                    []string{},                                                                  "INVALID_ARGUMENTS"},
-		{"unknown command",            []string{"frobnicate"},                                                      "INVALID_COMMAND"},
-		{"create: missing key-id",     []string{"create"},                                                          "INVALID_ARGUMENTS"},
-		{"create: key-id no colon",    []string{"create", "--key-id", "nocolon"},                                   "INVALID_KEY_ID"},
-		{"create: key-id empty label", []string{"create", "--key-id", ":tag"},                                      "INVALID_KEY_ID"},
-		{"create: key-id empty tag",   []string{"create", "--key-id", "label:"},                                    "INVALID_KEY_ID"},
-		{"sign: missing key-id",       []string{"sign", "--payload-hex", "0xdeadbeef"},                             "INVALID_ARGUMENTS"},
-		{"sign: missing payload",      []string{"sign", "--key-id", "chipkey:abc"},                                 "INVALID_ARGUMENTS"},
-		{"sign: invalid payload hex",  []string{"sign", "--key-id", "chipkey:abc", "--payload-hex", "notvalid!"},   "INVALID_PAYLOAD"},
-		{"sign: invalid hash mode",    []string{"sign", "--key-id", "chipkey:abc", "--payload-hex", "0xab", "--hash", "md5"}, "INVALID_HASH_MODE"},
-		{"sign: hash none wrong len",  []string{"sign", "--key-id", "chipkey:abc", "--payload-hex", "0xdeadbeef", "--hash", "none"}, "INVALID_DIGEST_LENGTH"},
-		{"info: missing key-id",       []string{"info"},                                                            "INVALID_ARGUMENTS"},
+		{"no args", []string{}, "INVALID_ARGUMENTS"},
+		{"unknown command", []string{"frobnicate"}, "INVALID_COMMAND"},
+		{"create: missing key-id", []string{"create"}, "INVALID_ARGUMENTS"},
+		{"create: key-id no colon", []string{"create", "--key-id", "nocolon"}, "INVALID_KEY_ID"},
+		{"create: key-id empty label", []string{"create", "--key-id", ":tag"}, "INVALID_KEY_ID"},
+		{"create: key-id empty tag", []string{"create", "--key-id", "label:"}, "INVALID_KEY_ID"},
+		{"sign: missing key-id", []string{"sign", "--payload-hex", "0xdeadbeef"}, "INVALID_ARGUMENTS"},
+		{"sign: missing payload", []string{"sign", "--key-id", "chipkey:abc"}, "INVALID_ARGUMENTS"},
+		{"sign: invalid payload hex", []string{"sign", "--key-id", "chipkey:abc", "--payload-hex", "notvalid!"}, "INVALID_PAYLOAD"},
+		{"sign: invalid hash mode", []string{"sign", "--key-id", "chipkey:abc", "--payload-hex", "0xab", "--hash", "md5"}, "INVALID_HASH_MODE"},
+		{"sign: hash none wrong len", []string{"sign", "--key-id", "chipkey:abc", "--payload-hex", "0xdeadbeef", "--hash", "none"}, "INVALID_DIGEST_LENGTH"},
+		{"info: missing key-id", []string{"info"}, "INVALID_ARGUMENTS"},
 	}
 
 	for _, c := range cases {

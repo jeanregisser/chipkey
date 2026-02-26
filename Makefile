@@ -1,9 +1,15 @@
 BINARY      = chipkey
 BIN_DIR     = bin
+TOOLS_DIR   = $(CURDIR)/.tools
+GOLANGCI_LINT = $(TOOLS_DIR)/golangci-lint
 BUNDLE_ID   = com.jeanregisser.chipkey
 APP_BUNDLE  = $(BIN_DIR)/Chipkey.app
 APP_MACOS   = $(APP_BUNDLE)/Contents/MacOS
-APP_VERSION = 0.1.0
+VERSION     ?= dev
+COMMIT      ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+DATE        ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+APP_VERSION ?= $(VERSION)
+LDFLAGS     = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)
 
 # Auto-detect signing identity and team ID from the keychain.
 # Prefers "Developer ID Application"; falls back to "Apple Development".
@@ -15,15 +21,15 @@ TEAM_ID ?= $(shell echo "$(SIGN_IDENTITY)" | sed -n 's/.*(\([A-Z0-9]*\))$$/\1/p'
 # Path to the provisioning profile (download from developer.apple.com).
 PROVISIONING_PROFILE ?= chipkey.provisionprofile
 
-.PHONY: build build-darwin build-linux bundle sign test clean
+.PHONY: build build-darwin build-linux build-windows bundle sign tools lint check-tidy test clean
 
 build: build-darwin
 
 ## Build a universal macOS binary (arm64 + x86_64). Must run on macOS.
 build-darwin:
 	mkdir -p $(BIN_DIR)
-	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o $(BIN_DIR)/$(BINARY)-darwin-arm64 .
-	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o $(BIN_DIR)/$(BINARY)-darwin-amd64 .
+	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags '$(LDFLAGS)' -o $(BIN_DIR)/$(BINARY)-darwin-arm64 .
+	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o $(BIN_DIR)/$(BINARY)-darwin-amd64 .
 	lipo -create \
 		-output $(BIN_DIR)/$(BINARY)-darwin \
 		$(BIN_DIR)/$(BINARY)-darwin-arm64 \
@@ -33,8 +39,14 @@ build-darwin:
 ## Build Linux binaries (can cross-compile from macOS).
 build-linux:
 	mkdir -p $(BIN_DIR)
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/$(BINARY)-linux-amd64 .
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(BIN_DIR)/$(BINARY)-linux-arm64 .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o $(BIN_DIR)/$(BINARY)-linux-amd64 .
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags '$(LDFLAGS)' -o $(BIN_DIR)/$(BINARY)-linux-arm64 .
+
+## Build Windows binaries (can cross-compile from macOS).
+build-windows:
+	mkdir -p $(BIN_DIR)
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o $(BIN_DIR)/$(BINARY)-windows-amd64.exe .
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -ldflags '$(LDFLAGS)' -o $(BIN_DIR)/$(BINARY)-windows-arm64.exe .
 
 ## Create the .app bundle, sign it, and embed the provisioning profile.
 bundle: $(BIN_DIR)/$(BINARY)-darwin
@@ -69,8 +81,20 @@ bundle: $(BIN_DIR)/$(BINARY)-darwin
 	@echo "Run with: $(APP_MACOS)/$(BINARY) <command>"
 	@echo "Verify:   codesign -dv $(APP_BUNDLE)"
 
+## Install development tools into .tools/.
+tools:
+	@mkdir -p $(TOOLS_DIR)
+	GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+
+lint: tools
+	$(GOLANGCI_LINT) run ./...
+
+check-tidy:
+	go mod tidy
+	@git diff --exit-code go.mod go.sum || (echo "go.mod/go.sum not tidy — run 'go mod tidy'" >&2; exit 1)
+
 test:
 	go test -v ./...
 
 clean:
-	rm -rf $(BIN_DIR)
+	rm -rf $(BIN_DIR) $(TOOLS_DIR)

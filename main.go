@@ -15,6 +15,13 @@ import (
 	"github.com/facebookincubator/sks"
 )
 
+// Set at build time via ldflags.
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 // --- JSON output ---
 
 type result map[string]any
@@ -202,7 +209,7 @@ func cmdInfo(args []string) {
 
 func main() {
 	if len(os.Args) < 2 {
-		fail("INVALID_ARGUMENTS", "usage: chipkey <create|sign|info> [flags]")
+		fail("INVALID_ARGUMENTS", "usage: chipkey <create|sign|info|version> [flags]")
 	}
 
 	cmd := os.Args[1]
@@ -215,7 +222,14 @@ func main() {
 		cmdSign(args)
 	case "info":
 		cmdInfo(args)
+	case "version":
+		respond(result{
+			"ok":      true,
+			"version": version,
+			"commit":  commit,
+			"date":    date,
+		})
 	default:
-		fail("INVALID_COMMAND", fmt.Sprintf("unknown command %q — use create, sign, or info", cmd))
+		fail("INVALID_COMMAND", fmt.Sprintf("unknown command %q — use create, sign, info, or version", cmd))
 	}
 }
