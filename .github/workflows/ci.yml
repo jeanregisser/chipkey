@@ -17,6 +17,8 @@ jobs:
         with:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.10.1
       - name: Check go mod tidy
         run: make check-tidy
       - name: Validate goreleaser config

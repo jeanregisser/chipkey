@@ -112,7 +112,7 @@ func cmdCreate(args []string) {
 	if err != nil {
 		fail("KEY_CREATION_FAILED", err.Error())
 	}
-	defer key.Close()
+	defer key.Close() //nolint:errcheck // best-effort cleanup
 
 	pub, ok := key.Public().(*ecdsa.PublicKey)
 	if !ok || pub == nil || pub.X == nil {
@@ -197,7 +197,7 @@ func cmdInfo(args []string) {
 	key, err := sks.LoadKey(label, tag, nil)
 	exists := err == nil && key != nil
 	if exists {
-		key.Close()
+		key.Close() //nolint:errcheck // best-effort cleanup
 	}
 
 	respond(result{

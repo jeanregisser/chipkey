@@ -83,7 +83,7 @@ bundle: $(BIN_DIR)/$(BINARY)-darwin
 ## Install development tools into .tools/.
 tools:
 	@mkdir -p $(TOOLS_DIR)
-	GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+	GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1
 
 lint: tools
 	$(GOLANGCI_LINT) run ./...

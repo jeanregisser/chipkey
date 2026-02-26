@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 		panic("failed to build test binary: " + err.Error())
 	}
 	code := m.Run()
-	os.Remove(testBinary)
+	_ = os.Remove(testBinary)
 	os.Exit(code)
 }
 
