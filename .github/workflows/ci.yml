@@ -165,4 +165,5 @@ jobs:
         run: |
           cd bin
           zip -r "Chipkey_${VERSION}_macos_app.zip" Chipkey.app
-          gh release upload "v${VERSION}" "Chipkey_${VERSION}_macos_app.zip" --clobber
+          shasum -a 256 "Chipkey_${VERSION}_macos_app.zip" >> ../dist/checksums.txt
+          gh release upload "v${VERSION}" "Chipkey_${VERSION}_macos_app.zip" ../dist/checksums.txt --clobber
