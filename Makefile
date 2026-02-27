@@ -100,7 +100,8 @@ notarize: $(APP_BUNDLE)
 		--apple-id "$(APPLE_ID)" \
 		--password "$(APPLE_APP_SPECIFIC_PASSWORD)" \
 		--team-id "$(TEAM_ID)" \
-		--wait
+		--wait \
+		--timeout 10m
 	xcrun stapler staple "$(APP_BUNDLE)"
 	rm "$(NOTARIZE_ZIP)"
 	zip -r "$(NOTARIZE_ZIP)" "$(APP_BUNDLE)"
