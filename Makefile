@@ -2,6 +2,7 @@ BINARY      = chipkey
 BIN_DIR     = bin
 TOOLS_DIR   = $(CURDIR)/.tools
 GOLANGCI_LINT = $(TOOLS_DIR)/golangci-lint
+GORELEASER    = $(TOOLS_DIR)/goreleaser
 BUNDLE_ID   = com.jeanregisser.chipkey
 APP_BUNDLE  = $(BIN_DIR)/Chipkey.app
 APP_MACOS   = $(APP_BUNDLE)/Contents/MacOS
@@ -110,6 +111,7 @@ notarize: $(APP_BUNDLE)
 tools:
 	@mkdir -p $(TOOLS_DIR)
 	GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1
+	GOBIN=$(TOOLS_DIR) go install github.com/goreleaser/goreleaser/v2@v2.14.1
 
 lint: tools
 	$(GOLANGCI_LINT) run ./...
