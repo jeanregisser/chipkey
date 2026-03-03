@@ -178,8 +178,40 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Create zip if notarization was skipped (secrets not configured)
-          if [ ! -f "bin/Chipkey_${VERSION}_macos_app.zip" ]; then
-            zip -r "bin/Chipkey_${VERSION}_macos_app.zip" bin/Chipkey.app
+          if [ ! -f "bin/chipkey_${VERSION}_macos_app.zip" ]; then
+            (cd bin && zip -r "chipkey_${VERSION}_macos_app.zip" Chipkey.app)
           fi
-          shasum -a 256 "bin/Chipkey_${VERSION}_macos_app.zip" >> dist/checksums.txt
-          gh release upload "v${VERSION}" "bin/Chipkey_${VERSION}_macos_app.zip" dist/checksums.txt --clobber
+          shasum -a 256 "bin/chipkey_${VERSION}_macos_app.zip" >> dist/checksums.txt
+          gh release upload "v${VERSION}" "bin/chipkey_${VERSION}_macos_app.zip" dist/checksums.txt --clobber
+
+  publish-npm:
+    needs: [version, release]
+    if: needs.version.outputs.version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Prepare npm bin directory
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make prepare-npm NPM_VERSION="$VERSION"
+
+      - name: Set package version
+        run: npm version "$VERSION" --no-git-tag-version
+        working-directory: npm
+
+      - name: Publish to npm
+        # Requires the 'chipkey' package to be configured as a trusted publisher
+        # on npmjs.com (no NPM_TOKEN needed — uses GitHub Actions OIDC).
+        run: npm publish --provenance --access public
+        working-directory: npm

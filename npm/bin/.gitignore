@@ -1,0 +1,4 @@
+# Native binaries — populated by CI during npm publish, not committed
+*
+!.gitignore
+!chipkey.js

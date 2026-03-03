@@ -1,0 +1,20 @@
+{
+  "name": "chipkey",
+  "version": "0.0.0",
+  "description": "Hardware-backed key management CLI using Secure Enclave (macOS) and TPM 2.0 (Linux/Windows)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeanregisser/chipkey.git"
+  },
+  "bin": {
+    "chipkey": "bin/chipkey.js"
+  },
+  "files": [
+    "bin",
+    "index.js"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

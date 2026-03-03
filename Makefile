@@ -21,9 +21,14 @@ TEAM_ID ?= $(shell echo "$(SIGN_IDENTITY)" | sed -n 's/.*(\([A-Z0-9]*\))$$/\1/p'
 # Path to the provisioning profile (download from developer.apple.com).
 PROVISIONING_PROFILE ?= chipkey.provisionprofile
 
-NOTARIZE_ZIP = $(BIN_DIR)/Chipkey_$(APP_VERSION)_macos_app.zip
+NOTARIZE_ZIP = $(BIN_DIR)/chipkey_$(APP_VERSION)_macos_app.zip
 
-.PHONY: build build-darwin build-linux build-windows bundle notarize tools lint check-tidy test clean
+# Version to download for prepare-npm (defaults to latest GitHub release).
+NPM_VERSION ?= $(shell gh release view --json tagName --jq '.tagName[1:]' 2>/dev/null)
+
+NPM_ARTIFACTS = dist/npm-artifacts
+
+.PHONY: build build-darwin build-linux build-windows bundle notarize prepare-npm tools lint check-tidy test clean
 
 build: build-darwin
 
@@ -95,7 +100,7 @@ notarize: $(APP_BUNDLE)
 		echo "Error: could not determine Team ID." >&2; exit 1; \
 	fi
 	@echo "Notarizing $(APP_BUNDLE) (Team $(TEAM_ID))..."
-	zip -r "$(NOTARIZE_ZIP)" "$(APP_BUNDLE)"
+	(cd $(BIN_DIR) && zip -r "$(notdir $(NOTARIZE_ZIP))" Chipkey.app)
 	xcrun notarytool submit "$(NOTARIZE_ZIP)" \
 		--apple-id "$(APPLE_ID)" \
 		--password "$(APPLE_APP_SPECIFIC_PASSWORD)" \
@@ -104,9 +109,38 @@ notarize: $(APP_BUNDLE)
 		--timeout 10m
 	xcrun stapler staple "$(APP_BUNDLE)"
 	rm "$(NOTARIZE_ZIP)"
-	zip -r "$(NOTARIZE_ZIP)" "$(APP_BUNDLE)"
+	(cd $(BIN_DIR) && zip -r "$(notdir $(NOTARIZE_ZIP))" Chipkey.app)
 	@echo ""
 	@echo "Notarized bundle zipped at: $(NOTARIZE_ZIP)"
+
+## Download release binaries into npm/bin/ for local testing (NPM_VERSION defaults to latest release).
+prepare-npm:
+	@if [ -z "$(NPM_VERSION)" ]; then \
+		echo "Error: could not determine version. Set NPM_VERSION=x.y.z or ensure 'gh' is configured." >&2; exit 1; \
+	fi
+	@echo "Downloading chipkey v$(NPM_VERSION) artifacts..."
+	mkdir -p $(NPM_ARTIFACTS) npm/bin
+
+	# macOS: extracts Chipkey.app/ directly into npm/bin/
+	gh release download "v$(NPM_VERSION)" --dir $(NPM_ARTIFACTS) --clobber
+	unzip -q -o "$(NPM_ARTIFACTS)/chipkey_$(NPM_VERSION)_macos_app.zip" -d npm/bin/
+
+	# Linux
+	tar -xzf "$(NPM_ARTIFACTS)/chipkey_$(NPM_VERSION)_linux_amd64.tar.gz" -C $(NPM_ARTIFACTS) chipkey
+	mv -f $(NPM_ARTIFACTS)/chipkey npm/bin/chipkey-linux-x64
+	chmod +x npm/bin/chipkey-linux-x64
+	tar -xzf "$(NPM_ARTIFACTS)/chipkey_$(NPM_VERSION)_linux_arm64.tar.gz" -C $(NPM_ARTIFACTS) chipkey
+	mv -f $(NPM_ARTIFACTS)/chipkey npm/bin/chipkey-linux-arm64
+	chmod +x npm/bin/chipkey-linux-arm64
+
+	# Windows
+	mkdir -p $(NPM_ARTIFACTS)/win-x64 $(NPM_ARTIFACTS)/win-arm64
+	unzip -q -o -j "$(NPM_ARTIFACTS)/chipkey_$(NPM_VERSION)_windows_amd64.zip" chipkey.exe -d $(NPM_ARTIFACTS)/win-x64
+	mv -f $(NPM_ARTIFACTS)/win-x64/chipkey.exe npm/bin/chipkey-win32-x64.exe
+	unzip -q -o -j "$(NPM_ARTIFACTS)/chipkey_$(NPM_VERSION)_windows_arm64.zip" chipkey.exe -d $(NPM_ARTIFACTS)/win-arm64
+	mv -f $(NPM_ARTIFACTS)/win-arm64/chipkey.exe npm/bin/chipkey-win32-arm64.exe
+
+	@echo "npm/bin ready with chipkey v$(NPM_VERSION)"
 
 ## Install development tools into .tools/.
 tools:
