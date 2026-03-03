@@ -1,5 +1,7 @@
 bin/
 !npm/bin/
+npm/bin/chipkey-*
+npm/bin/Chipkey.app/
 dist/
 .tools/
 chipkey-test
