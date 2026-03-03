@@ -10,9 +10,11 @@
   "bin": {
     "chipkey": "bin/chipkey.js"
   },
+  "types": "index.d.ts",
   "files": [
     "bin",
-    "index.js"
+    "index.js",
+    "index.d.ts"
   ],
   "engines": {
     "node": ">=18"
