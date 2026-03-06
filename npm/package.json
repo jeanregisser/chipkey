@@ -1,5 +1,5 @@
 {
-  "name": "@jeanregisser/chipkey",
+  "name": "@chipkey/cli",
   "version": "0.0.0",
   "description": "Hardware-backed key management CLI using Secure Enclave (macOS) and TPM 2.0 (Linux/Windows)",
   "license": "MIT",

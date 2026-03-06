@@ -120,6 +120,7 @@ prepare-npm:
 	fi
 	@echo "Downloading chipkey v$(NPM_VERSION) artifacts..."
 	mkdir -p $(NPM_ARTIFACTS) npm/bin
+	cp README.md npm/README.md
 
 	# macOS: extracts Chipkey.app/ directly into npm/bin/
 	gh release download "v$(NPM_VERSION)" --dir $(NPM_ARTIFACTS) --clobber

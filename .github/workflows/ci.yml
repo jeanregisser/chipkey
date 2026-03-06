@@ -209,7 +209,7 @@ jobs:
         working-directory: npm
 
       - name: Publish to npm
-        # Requires the 'chipkey' package to be configured as a trusted publisher
+        # Requires the '@chipkey/cli' package to be configured as a trusted publisher
         # on npmjs.com (no NPM_TOKEN needed — uses GitHub Actions OIDC).
         run: npm publish --provenance --access public
         working-directory: npm
