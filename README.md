@@ -25,6 +25,18 @@ Keys are ECDSA P-256 (secp256r1). Signatures are returned in the 64-byte raw `R|
 
 ## Installation
 
+### Install from npm
+
+```sh
+npm install -g @chipkey/cli
+```
+
+Then verify the install:
+
+```sh
+chipkey version
+```
+
 ### Download a release
 
 Grab the latest archive for your platform from the [Releases](https://github.com/jeanregisser/chipkey/releases) page.
